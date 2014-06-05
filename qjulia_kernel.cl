@@ -300,8 +300,14 @@ QJulia(
 __kernel void
 QJuliaKernel(
     __global uchar4 *result,
-    const float4 mu,
-    const float4 diffuse,
+    const float mu1,
+    const float mu2,
+    const float mu3,
+    const float mu4,
+    const float d1,
+    const float d2,
+    const float d3,
+    const float d4,
     const float epsilon)
 {
     int tx = get_global_id(0);
@@ -310,6 +316,9 @@ QJuliaKernel(
     int sy = get_global_size(1);
     int index = ty * WIDTH + tx;
     bool valid = (tx < WIDTH) && (ty < HEIGHT);
+
+    float4 mu = (float4)(mu1, mu2, mu3, mu4);
+    float4 diffuse = (float4)(d1, d2, d3, d4);
 
     float4 coord = (float4)((float)tx, (float)ty, 0.0f, 0.0f);
     

@@ -1,5 +1,3 @@
-# Pkg.checkout("OpenCL", "image")
-
 import OpenCL
 const cl = OpenCL
 
@@ -18,7 +16,7 @@ const colorC = [0.25f0, 0.45f0, 1.0f0, 1.0f0]
 const μT = 0.0f0
 const μA = [-0.278f0, -0.479f0, 0.0f0, 0.0f0]
 const μB = [0.278f0, 0.479f0, 0.0f0, 0.0f0] 
-const μC = [-0.278f0, -0.479f0, -0.231f0, 0.235f0] 
+const μC = [-0.278f0, -0.479f0, -0.231f0, 0.235f0]
 
 # Setup OpenCL
 const device, ctx, queue = cl.create_compute_context()
@@ -40,8 +38,7 @@ const image = cl.Image{cl.RGBA, Float32}(ctx, :w, shape = (width, height, 1, 1, 
 const buffer = cl.Buffer(Float32, ctx, :w, sizeof(Float32) * cl.nchannels(cl.RGBA) * width * height)
 
 function compute()
-    cl.call(queue, qjulia_kernel, (width, height), nothing, buffer, μC, colorC, ε)
-
+    cl.call(queue, qjulia_kernel, (width, height), nothing, buffer, μC..., colorC..., ε)
 
     # err = clEnqueueAcquireGLObjects(ComputeCommands, 1, &ComputeImage, 0, 0, 0);
     # if (err != CL_SUCCESS)
@@ -72,5 +69,7 @@ end
 # TODO workgroup size
 
 function main()
-	recompute()
+	compute()
 end
+
+main()
