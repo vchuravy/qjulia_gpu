@@ -7,23 +7,18 @@ wglGetCurrentDC() 		= ccall((:wglGetCurrentDC, "opengl32"), Ptr{Void}, ())
 
 const window = createWindow([512, 512], "opencl&opengl yeah")
 
-platformid =  	cl.CL_platform_id[0]
-platformNum =  	cl.CL_uint[0]
-cl.api.clGetPlatformIDs(1, platformid, platformNum)
-platform = platformid[1]
+const device = first(cl.devices(:gpu))
+const platform = cl.info(device, :platform)
 
-const props  = cl.CL_context_properties[
-cl.CL_GL_CONTEXT_KHR, wglGetCurrentContext(),
-cl.CL_WGL_HDC_KHR, wglGetCurrentDC(),
-cl.CL_CONTEXT_PLATFORM , platform, 0]
-
-const devices = cl.devices(:gpu)
-const device = devices[1]
-
+const props = [
+    (cl.CL_GL_CONTEXT_KHR, wglGetCurrentContext()),
+    (cl.CL_WGL_HDC_KHR, wglGetCurrentDC()),
+    (cl.CL_CONTEXT_PLATFORM, platform)]
 
 # Setup OpenCL
-const ctx = cl.Context(props, devices)
+const ctx = cl.Context(device, properties = props)
 const queue = cl.CmdQueue(ctx)
+
 if !device[:has_image_support]
 	error("Device $device has no image support. Aborting.")
 end
