@@ -1,8 +1,21 @@
 import OpenCL
-using ModernGL, GLWindow, GLFW
+using ModernGL, GLFW, GLUtil, Images
 const cl = OpenCL
 
-const window = createWindow([512, 512], "opencl&opengl yeah")
+const width = 512 # Also needs changing in qjulia_kernel.cl
+const height = 512 # Also needs changing in qjulia_kernel.cl
+
+GLFW.Init()
+GLFW.WindowHint(GLFW.SAMPLES, 4)
+@osx_only begin
+    GLFW.WindowHint(GLFW.CONTEXT_VERSION_MAJOR, 3)
+    GLFW.WindowHint(GLFW.CONTEXT_VERSION_MINOR, 2)
+    GLFW.WindowHint(GLFW.OPENGL_FORWARD_COMPAT, GL_TRUE)
+    GLFW.WindowHint(GLFW.OPENGL_PROFILE, GLFW.OPENGL_CORE_PROFILE)
+end 
+const window = GLFW.CreateWindow(width ,height , "OpenCL OpenGL interop")
+GLFW.MakeContextCurrent(window)
+
 
 const device = first(cl.devices(:gpu))
 const platform = cl.info(device, :platform)
@@ -45,25 +58,23 @@ if !device[:has_image_support]
 end
 
 # Setup program parameter
-const width = 512 # Also needs changing in qjulia_kernel.cl
-const height = 512 # Also needs changing in qjulia_kernel.cl
 
-gl_texture_id = GLuint[0]
-glGenTextures(1, gl_texture_id)
-gl_texture_id = gl_texture_id[1]
-@assert gl_texture_id > 0
-glBindTexture(GL_TEXTURE_2D, gl_texture_id)
-glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
-glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
-glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
-glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0)
 
+
+println("creating gl texture")
+img = imread("test.png")
+println(img)
+gl_texture = Texture(convert(Ptr{Void}, pointer(img.data)), GL_TEXTURE_2D, GL_RGBA8, [width, height], GL_RGBA, GL_UNSIGNED_BYTE)
 err_code = Array(cl.CL_int, 1)
-const image = cl.api.clCreateFromGLTexture2D(ctx.id, cl.CL_MEM_READ_WRITE, GL_TEXTURE_2D, 0, gl_texture_id, err_code)
+
+
+
+const image = cl.api.clCreateFromGLTexture2D(ctx.id, cl.CL_MEM_READ_WRITE, GL_TEXTURE_2D, 0, gl_texture.id, err_code)
 
 if err_code[1] != cl.CL_SUCCESS
-    println(err_code[1])
+    error(err_code[1])
+else 
+    println("cl texture created from opengl texture successfully")
 end
 
 const ε = 0.003f0
@@ -116,6 +127,10 @@ function compute()
     #     printf("Failed to release GL object! %d\n", err);
     #     return EXIT_FAILURE;
     # }
+
+
+    
+
 end
 
 # TODO workgroup size
@@ -125,3 +140,31 @@ function main()
 end
 
 main()
+const fullscreenQuad = RenderObject([
+    :position       => GLBuffer(GLfloat[-1,-1, -1,1, 1,1, 1,-1], 2),
+    :indexes        => GLBuffer(GLuint[0, 1, 2,  2, 3, 0], 1, bufferType = GL_ELEMENT_ARRAY_BUFFER),
+    :uv             => GLBuffer(GLfloat[0,1,  0,0,  1,0, 1,1], 2),
+    :fullscreenTex  => gl_texture
+], GLProgram("simple"))
+glClearColor(1f0, 1f0, 1f0, 0f0)   
+
+while !GLFW.WindowShouldClose(window)
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+    glDisable(GL_DEPTH_TEST)
+    programID = fullscreenQuad.vertexArray.program.id
+    if programID!= glGetIntegerv(GL_CURRENT_PROGRAM)
+        glUseProgram(programID)
+    end
+    render(fullscreenQuad.uniforms, programID)
+    glBindVertexArray(fullscreenQuad.vertexArray.id)
+    glDrawElements(GL_TRIANGLES, fullscreenQuad.vertexArray.indexLength, GL_UNSIGNED_INT, GL_NONE)
+    # Swap front and back buffers
+    GLFW.SwapBuffers(window)
+
+    # Poll for and process events
+    GLFW.PollEvents()
+end
+
+GLFW.Terminate()

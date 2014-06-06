@@ -1,0 +1,7 @@
+Pkg.update()
+Pkg.add("Images")
+Pkg.clone("https://github.com/jayschwa/GLFW.jl.git")
+Pkg.clone("https://github.com/SimonDanisch/GLUtil.jl.git")
+Pkg.clone("https://github.com/SimonDanisch/ModernGL.jl.git")
+Pkg.update()
+Pkg.build()
