@@ -2,8 +2,8 @@ import OpenCL
 using ModernGL, GLFW, GLUtil, Images
 const cl = OpenCL
 
-const width = 512 # Also needs changing in qjulia_kernel.cl
-const height = 512 # Also needs changing in qjulia_kernel.cl
+const width = 1024 # Also needs changing in qjulia_kernel.cl
+const height = 1024 # Also needs changing in qjulia_kernel.cl
 function initGLWindow()
     GLFW.Init()
     GLFW.WindowHint(GLFW.SAMPLES, 4)
@@ -63,9 +63,7 @@ end
 
 
 
-println("creating gl texture")
-img = imread("test.png")
-gl_texture = Texture(convert(Ptr{Void}, pointer(img.data)), GL_TEXTURE_2D, GL_RGBA8, [width, height], GL_RGBA, GL_UNSIGNED_BYTE)
+gl_texture = Texture(C_NULL, GL_TEXTURE_2D, GL_RGBA8, [width, height], GL_RGBA, GL_UNSIGNED_BYTE)
 
 err_code = Array(cl.CL_int, 1)
 const image = cl.api.clCreateFromGLTexture2D(ctx.id, cl.CL_MEM_READ_WRITE, GL_TEXTURE_2D, 0, gl_texture.id, err_code)
@@ -103,7 +101,6 @@ function compute()
 
     cl.call(queue, qjulia_kernel, (width, height), nothing, buffer, μC..., colorC..., ε)
     glFinish()
-    println(image)
     err = cl.api.clEnqueueAcquireGLObjects(queue.id, 1, [image], 0, 0, C_NULL)
     if (err != cl.CL_SUCCESS)
         error("Failed to acquire GL object! ", err)
@@ -114,12 +111,12 @@ function compute()
                                      0, origin, region, 0, C_NULL, 0)
     
     if err != cl.CL_SUCCESS
-        println("Failed to copy buffer to image! %d\n", err)
+        println("Failed to copy buffer to image! ", err)
     end
     
     err = cl.api.clEnqueueReleaseGLObjects(queue.id, 1, [image], 0, 0, 0)
     if err != cl.CL_SUCCESS
-        println("Failed to release GL object! %d\n", err)
+        println("Failed to release GL object! ", err)
     end
 
 
@@ -139,7 +136,7 @@ const fullscreenQuad = RenderObject([
     :fullscreenTex  => gl_texture
 ], GLProgram("simple"))
 glClearColor(1f0, 1f0, 1f0, 0f0)   
-
+glViewport(0,0,width, height)
 while !GLFW.WindowShouldClose(window)
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)

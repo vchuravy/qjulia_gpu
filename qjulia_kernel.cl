@@ -48,10 +48,10 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef WIDTH
-#define WIDTH                       (512)
+#define WIDTH                       (1024)
 #endif
 #ifndef HEIGHT
-#define HEIGHT                      (512)
+#define HEIGHT                      (1024)
 #endif
 #define ASPECT                      ((float)WIDTH / (float)HEIGHT)
 #define SQR(x)                      ((x)*(x))
