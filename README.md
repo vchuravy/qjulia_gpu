@@ -26,8 +26,18 @@ and in Julia
 
 ''''julia
 Pkg.clone("git@github.com:vchuravy/OpenCL.jl.git")
-Pkg.checkout("OpenCL", "image")
+Pkg.checkout("OpenCL", "image_opengl")
 ''''
+
+other requirements are
+
+- Images
+- GLFW 
+- ModernGL https://github.com/SimonDanisch/ModernGL.jl.git
+- GLWindow https://github.com/SimonDanisch/GLWindow.jl.git
+- GLUtil https://github.com/SimonDanisch/GLUtil.jl.git
+- React  https://github.com/shashi/React.jl.git
+- Events https://github.com/SimonDanisch/Events.jl.git
 
 # Status
 
