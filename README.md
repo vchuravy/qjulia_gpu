@@ -38,5 +38,5 @@ other requirements are:
 ```
 They can be installed by executing packages.jl
 # Status
-![window](render.pgng)
+![Julia-Set Render](render.png "Window with rendered Julia-Set")
 It works under windows with Intel HD 4400
