@@ -4,18 +4,20 @@ const cl = OpenCL
 
 const width = 512 # Also needs changing in qjulia_kernel.cl
 const height = 512 # Also needs changing in qjulia_kernel.cl
-
-GLFW.Init()
-GLFW.WindowHint(GLFW.SAMPLES, 4)
-@osx_only begin
-    GLFW.WindowHint(GLFW.CONTEXT_VERSION_MAJOR, 3)
-    GLFW.WindowHint(GLFW.CONTEXT_VERSION_MINOR, 2)
-    GLFW.WindowHint(GLFW.OPENGL_FORWARD_COMPAT, GL_TRUE)
-    GLFW.WindowHint(GLFW.OPENGL_PROFILE, GLFW.OPENGL_CORE_PROFILE)
-end 
-const window = GLFW.CreateWindow(width ,height , "OpenCL OpenGL interop")
-GLFW.MakeContextCurrent(window)
-
+function initGLWindow()
+    GLFW.Init()
+    GLFW.WindowHint(GLFW.SAMPLES, 4)
+    @osx_only begin
+        GLFW.WindowHint(GLFW.CONTEXT_VERSION_MAJOR, 3)
+        GLFW.WindowHint(GLFW.CONTEXT_VERSION_MINOR, 2)
+        GLFW.WindowHint(GLFW.OPENGL_FORWARD_COMPAT, GL_TRUE)
+        GLFW.WindowHint(GLFW.OPENGL_PROFILE, GLFW.OPENGL_CORE_PROFILE)
+    end 
+    const window = GLFW.CreateWindow(width ,height , "OpenCL OpenGL interop")
+    GLFW.MakeContextCurrent(window)
+    window
+end
+const window = initGLWindow()
 
 const device = first(cl.devices(:gpu))
 const platform = cl.info(device, :platform)
@@ -63,12 +65,9 @@ end
 
 println("creating gl texture")
 img = imread("test.png")
-println(img)
 gl_texture = Texture(convert(Ptr{Void}, pointer(img.data)), GL_TEXTURE_2D, GL_RGBA8, [width, height], GL_RGBA, GL_UNSIGNED_BYTE)
+
 err_code = Array(cl.CL_int, 1)
-
-
-
 const image = cl.api.clCreateFromGLTexture2D(ctx.id, cl.CL_MEM_READ_WRITE, GL_TEXTURE_2D, 0, gl_texture.id, err_code)
 
 if err_code[1] != cl.CL_SUCCESS
@@ -101,35 +100,28 @@ const qjulia_kernel = cl.Kernel(qjulia_program, "QJuliaKernel")
 const buffer = cl.Buffer(Float32, ctx, :w, sizeof(Float32) * cl.nchannels(cl.RGBA) * width * height)
 
 function compute()
+
     cl.call(queue, qjulia_kernel, (width, height), nothing, buffer, μC..., colorC..., ε)
-
-    # err = clEnqueueAcquireGLObjects(ComputeCommands, 1, &ComputeImage, 0, 0, 0);
-    # if (err != CL_SUCCESS)
-    # {
-    #     printf("Failed to acquire GL object! %d\n", err);
-    #     return EXIT_FAILURE;
-    # }
-
-    # size_t origin[] = { 0, 0, 0 };
-    # size_t region[] = { TextureWidth, TextureHeight, 1 };
-    # err = clEnqueueCopyBufferToImage(ComputeCommands, ComputeResult, ComputeImage, 
-    #                                  0, origin, region, 0, NULL, 0);
+    glFinish()
+    println(image)
+    err = cl.api.clEnqueueAcquireGLObjects(queue.id, 1, [image], 0, 0, C_NULL)
+    if (err != cl.CL_SUCCESS)
+        error("Failed to acquire GL object! ", err)
+    end
+    origin = Csize_t[ 0, 0, 0 ]
+    region = Csize_t[width, height, 1 ]
+    err = cl.api.clEnqueueCopyBufferToImage(queue.id, buffer.id, image, 
+                                     0, origin, region, 0, C_NULL, 0)
     
-    # if(err != CL_SUCCESS)
-    # {
-    #     printf("Failed to copy buffer to image! %d\n", err);
-    #     return EXIT_FAILURE;
-    # }
+    if err != cl.CL_SUCCESS
+        println("Failed to copy buffer to image! %d\n", err)
+    end
     
-    # err = clEnqueueReleaseGLObjects(ComputeCommands, 1, &ComputeImage, 0, 0, 0);
-    # if (err != CL_SUCCESS)
-    # {
-    #     printf("Failed to release GL object! %d\n", err);
-    #     return EXIT_FAILURE;
-    # }
+    err = cl.api.clEnqueueReleaseGLObjects(queue.id, 1, [image], 0, 0, 0)
+    if err != cl.CL_SUCCESS
+        println("Failed to release GL object! %d\n", err)
+    end
 
-
-    
 
 end
 

@@ -38,5 +38,5 @@ other requirements are:
 ```
 They can be installed by executing packages.jl
 # Status
-
-Currently only the loading and executing of the OpenCL code works.
+![window](render.pgng)
+It works under windows with Intel HD 4400
