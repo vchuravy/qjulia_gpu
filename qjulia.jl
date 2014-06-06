@@ -2,18 +2,39 @@ import OpenCL
 using ModernGL, GLWindow, GLFW
 const cl = OpenCL
 
-wglGetCurrentContext() 	= ccall((:wglGetCurrentContext, "opengl32"), Ptr{Void}, ())
-wglGetCurrentDC() 		= ccall((:wglGetCurrentDC, "opengl32"), Ptr{Void}, ())
-
 const window = createWindow([512, 512], "opencl&opengl yeah")
 
 const device = first(cl.devices(:gpu))
 const platform = cl.info(device, :platform)
 
-const props = [
-    (cl.CL_GL_CONTEXT_KHR, wglGetCurrentContext()),
-    (cl.CL_WGL_HDC_KHR, wglGetCurrentDC()),
-    (cl.CL_CONTEXT_PLATFORM, platform)]
+if !("cl_khr_gl_sharing" in cl.info(device, :extensions)) 
+    error("Need extensions cl_khr_gl_sharing")
+end
+
+const glLib = @windows? "opengl32" : @linux? "libGL" : ""
+
+@windows? begin
+    function getProperties()
+        currentContext = ccall(("wglGetCurrentContext", glLib), Ptr{Void}, ())
+        currentDC = ccall(("wglGetCurrentDC", glLib), Ptr{Void}, ())
+
+        [(cl.CL_GL_CONTEXT_KHR, currentContext),
+        (cl.CL_WGL_HDC_KHR, currentDC)]
+    end
+
+end : @linux? begin
+    function getProperties()
+        currentContext = ccall(("glXGetCurrentContext", glLib), Ptr{Void}, ())
+        currentDC = ccall(("glXGetCurrentDisplay", glLib), Ptr{Void}, ())
+
+        [(cl.CL_GL_CONTEXT_KHR, currentContext),
+        (cl.CL_GLX_DISPLAY_KHR, currentDC)]
+    end
+
+end : error("Can't handle this")
+
+const props = [getProperties(), (cl.CL_CONTEXT_PLATFORM, platform)]
+
 
 # Setup OpenCL
 const ctx = cl.Context(device, properties = props)
