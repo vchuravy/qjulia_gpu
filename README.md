@@ -18,27 +18,25 @@ http://www.cs.caltech.edu/~keenan/project_qjulia.html
 
 Currently you will need to use my "fork" of the OpenCL package.
 
-''''bash
+```bash
 rm -rf ~/.julia/v0.3/OpenCL.jl
-''''
+```
 
 and in Julia
 
-''''julia
+```julia
 Pkg.clone("git@github.com:vchuravy/OpenCL.jl.git")
 Pkg.checkout("OpenCL", "image_opengl")
-''''
+```
 
-other requirements are
-
+other requirements are:
+```
 - Images
 - GLFW 
 - ModernGL https://github.com/SimonDanisch/ModernGL.jl.git
-- GLWindow https://github.com/SimonDanisch/GLWindow.jl.git
 - GLUtil https://github.com/SimonDanisch/GLUtil.jl.git
-- React  https://github.com/shashi/React.jl.git
-- Events https://github.com/SimonDanisch/Events.jl.git
-
+```
+They can be installed by executing packages.jl
 # Status
 
 Currently only the loading and executing of the OpenCL code works.
