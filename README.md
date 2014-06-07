@@ -16,18 +16,11 @@ http://www.cs.caltech.edu/~keenan/project_qjulia.html
 
 # Setup:
 
-Currently you will need to use my "fork" of the OpenCL package.
+Currently the necessary OpenCL.jl support resides in a special branch 
 
-```bash
-rm -rf ~/.julia/v0.3/OpenCL.jl
-```
-
-and in Julia
-
-```julia
-Pkg.clone("git@github.com:vchuravy/OpenCL.jl.git")
-Pkg.checkout("OpenCL", "image_opengl")
-```
+````julia
+Pkg.checkout("OpenCL", "vc/qjulia")
+````
 
 other requirements are:
 ```
