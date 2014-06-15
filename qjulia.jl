@@ -4,6 +4,7 @@ const cl = OpenCL
 
 const width = 1024 # Also needs changing in qjulia_kernel.cl
 const height = 1024 # Also needs changing in qjulia_kernel.cl
+
 function initGLWindow()
     GLFW.Init()
     GLFW.WindowHint(GLFW.SAMPLES, 4)
@@ -74,17 +75,18 @@ else
     println("cl texture created from opengl texture successfully")
 end
 
-const ε = 0.003f0
+const ε = 0.0003f0
 
 const colorT = 0.0f0
 const colorA = [0.25f0, 0.45f0, 1.0f0, 1.0f0]
-const colorB = [0.25f0, 0.45f0, 1.0f0, 1.0f0]
-const colorC = [0.25f0, 0.45f0, 1.0f0, 1.0f0]
+const colorB = [0.9f0, 0.45f0, 0.1f0, 1.0f0]
+const colorC = [0.7f0, 0.7f0, 1.0f0, 1.0f0]
 
 const μT = 0.0f0
-const μA = [-0.278f0, -0.479f0, 0.0f0, 0.0f0]
-const μB = [0.278f0, 0.479f0, 0.0f0, 0.0f0] 
-const μC = [-0.278f0, -0.479f0, -0.231f0, 0.235f0]
+const μA = [-0.278f0, -0.479f0, 0.2f0, 0.0f0]
+const μB = [0.278f0, 0.479f0, 0.0f0, 0.4f0]
+const μC = [-0.278f0, -0.03f0, -0.24f0, 0.235f0]
+#const μC = [0.285f0, -0.001f0, -0.231f0, 0.235f0]
 const kernelsource = open(readall, joinpath(dirname(Base.source_path()), "qjulia_kernel.cl"))
 const qjulia_program = cl.Program(ctx, source=kernelsource) |> cl.build!
 const qjulia_kernel = cl.Kernel(qjulia_program, "QJuliaKernel")
@@ -146,7 +148,7 @@ while !GLFW.WindowShouldClose(window)
     if programID!= glGetIntegerv(GL_CURRENT_PROGRAM)
         glUseProgram(programID)
     end
-    render(fullscreenQuad.uniforms, programID)
+    render(fullscreenQuad.uniforms)
     glBindVertexArray(fullscreenQuad.vertexArray.id)
     glDrawElements(GL_TRIANGLES, fullscreenQuad.vertexArray.indexLength, GL_UNSIGNED_INT, GL_NONE)
     # Swap front and back buffers
