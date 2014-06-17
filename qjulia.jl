@@ -20,7 +20,8 @@ function initGLWindow()
 end
 const window = initGLWindow()
 
-const device = first(cl.devices(:gpu))
+const devices = isempty(cl.devices(:gpu)) ? cl.devices() : cl.devices(:gpu)
+const device = !isempty(devices) ? first(devices) : error("Could not find a OpenCL device")
 const platform = cl.info(device, :platform)
 
 if !("cl_khr_gl_sharing" in cl.info(device, :extensions)) 
