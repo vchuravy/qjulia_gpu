@@ -7,6 +7,12 @@ const height = 1024 # Also needs changing in qjulia_kernel.cl
 
 const window = createWindow(:QJulia, width, height)
 
+const glVersion = bytestring(glGetString(GL_VERSION))
+const glVendor = bytestring(glGetString(GL_VENDOR))
+const glRenderer = bytestring(glGetString(GL_RENDERER))
+
+println("Using OpenGL $glVersion on $glRenderer provided by $glVendor")
+
 const devices = isempty(cl.devices(:gpu)) ? cl.devices() : cl.devices(:gpu)
 const device = !isempty(devices) ? first(devices) : error("Could not find a OpenCL device")
 const platform = cl.info(device, :platform)
