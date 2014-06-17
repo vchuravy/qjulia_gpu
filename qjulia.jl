@@ -25,7 +25,7 @@ const device = !isempty(devices) ? first(devices) : error("Could not find a Open
 const platform = cl.info(device, :platform)
 const clVersion = cl.opencl_version(platform)
 
-println("Using OpenCL $version on $(cl.info(device, :name)) driven by platform $(cl.info(platform, :name))")
+println("Using OpenCL $clVersion on $(cl.info(device, :name)) driven by platform $(cl.info(platform, :name))")
 
 if !("cl_khr_gl_sharing" in cl.info(device, :extensions)) 
     error("Need extensions cl_khr_gl_sharing")
@@ -143,34 +143,44 @@ end
 
 function main()
 	compute()
+
+
+    const fullscreenQuad = RenderObject([
+        :position       => GLBuffer(GLfloat[-1,-1, -1,1, 1,1, 1,-1], 2),
+        :indexes        => GLBuffer(GLuint[0, 1, 2,  2, 3, 0], 1, bufferType = GL_ELEMENT_ARRAY_BUFFER),
+        :uv             => GLBuffer(GLfloat[0,1,  0,0,  1,0, 1,1], 2),
+        :fullscreenTex  => gl_texture
+    ], GLProgram("simple"))
+    glClearColor(1f0, 1f0, 1f0, 0f0)   
+    glViewport(0,0,width, height)
+    runner = 0.0f0
+    while !GLFW.WindowShouldClose(window)
+
+        μC[1] = float32(sin(runner))
+        μC[2] = float32(sin(runner /0.8f0))
+        μC[3] = float32(sin(runner /0.6f0))
+        μC[4] = float32(sin(runner /0.4f0))
+
+        runner += 0.01f0
+        compute()
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+        glDisable(GL_DEPTH_TEST)
+        programID = fullscreenQuad.vertexArray.program.id
+        if programID!= glGetIntegerv(GL_CURRENT_PROGRAM)
+            glUseProgram(programID)
+        end
+        render(fullscreenQuad.uniforms)
+        glBindVertexArray(fullscreenQuad.vertexArray.id)
+        glDrawElements(GL_TRIANGLES, fullscreenQuad.vertexArray.indexLength, GL_UNSIGNED_INT, GL_NONE)
+        # Swap front and back buffers
+        GLFW.SwapBuffers(window)
+
+        # Poll for and process events
+        GLFW.PollEvents()
+    end
+
+    GLFW.Terminate()
 end
 
 main()
-const fullscreenQuad = RenderObject([
-    :position       => GLBuffer(GLfloat[-1,-1, -1,1, 1,1, 1,-1], 2),
-    :indexes        => GLBuffer(GLuint[0, 1, 2,  2, 3, 0], 1, bufferType = GL_ELEMENT_ARRAY_BUFFER),
-    :uv             => GLBuffer(GLfloat[0,1,  0,0,  1,0, 1,1], 2),
-    :fullscreenTex  => gl_texture
-], GLProgram("simple"))
-glClearColor(1f0, 1f0, 1f0, 0f0)   
-glViewport(0,0,width, height)
-while !GLFW.WindowShouldClose(window)
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
-    glDisable(GL_DEPTH_TEST)
-    programID = fullscreenQuad.vertexArray.program.id
-    if programID!= glGetIntegerv(GL_CURRENT_PROGRAM)
-        glUseProgram(programID)
-    end
-    render(fullscreenQuad.uniforms)
-    glBindVertexArray(fullscreenQuad.vertexArray.id)
-    glDrawElements(GL_TRIANGLES, fullscreenQuad.vertexArray.indexLength, GL_UNSIGNED_INT, GL_NONE)
-    # Swap front and back buffers
-    GLFW.SwapBuffers(window)
-
-    # Poll for and process events
-    GLFW.PollEvents()
-end
-
-GLFW.Terminate()
