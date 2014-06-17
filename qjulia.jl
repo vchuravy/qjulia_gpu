@@ -1,24 +1,11 @@
 import OpenCL
-using ModernGL, GLFW, GLUtil, Images
+using ModernGL, GLWindow, GLFW, GLUtil, Images
 const cl = OpenCL
 
 const width = 1024 # Also needs changing in qjulia_kernel.cl
 const height = 1024 # Also needs changing in qjulia_kernel.cl
 
-function initGLWindow()
-    GLFW.Init()
-    GLFW.WindowHint(GLFW.SAMPLES, 4)
-    @osx_only begin
-        GLFW.WindowHint(GLFW.CONTEXT_VERSION_MAJOR, 3)
-        GLFW.WindowHint(GLFW.CONTEXT_VERSION_MINOR, 2)
-        GLFW.WindowHint(GLFW.OPENGL_FORWARD_COMPAT, GL_TRUE)
-        GLFW.WindowHint(GLFW.OPENGL_PROFILE, GLFW.OPENGL_CORE_PROFILE)
-    end 
-    const window = GLFW.CreateWindow(width ,height , "OpenCL OpenGL interop")
-    GLFW.MakeContextCurrent(window)
-    window
-end
-const window = initGLWindow()
+const window = createWindow(:QJulia, width, height)
 
 const devices = isempty(cl.devices(:gpu)) ? cl.devices() : cl.devices(:gpu)
 const device = !isempty(devices) ? first(devices) : error("Could not find a OpenCL device")

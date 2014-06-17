@@ -28,6 +28,7 @@ other requirements are:
 - GLFW 
 - ModernGL https://github.com/SimonDanisch/ModernGL.jl.git
 - GLUtil https://github.com/SimonDanisch/GLUtil.jl.git
+- GLWindow https://github.com/SimonDanisch/GLWindow.jl.git
 ```
 They can be installed by executing packages.jl
 # Status
