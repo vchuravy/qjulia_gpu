@@ -71,8 +71,12 @@ end
 gl_texture = Texture(C_NULL, GL_TEXTURE_2D, GL_RGBA8, [width, height], GL_RGBA, GL_UNSIGNED_BYTE)
 
 err_code = Array(cl.CL_int, 1)
-const image = cl.api.clCreateFromGLTexture2D(ctx.id, cl.CL_MEM_READ_WRITE, GL_TEXTURE_2D, 0, gl_texture.id, err_code)
 
+if clVersion < v"1.2.0"
+	const image = cl.api.clCreateFromGLTexture2D(ctx.id, cl.CL_MEM_READ_WRITE, GL_TEXTURE_2D, 0, gl_texture.id, err_code)
+else
+	const image = cl.api.clCreateFromGLTexture(ctx.id, cl.CL_MEM_READ_WRITE, GL_TEXTURE_2D, 0, gl_texture.id, err_code)
+end
 if err_code[1] != cl.CL_SUCCESS
     error(err_code[1])
 else 
