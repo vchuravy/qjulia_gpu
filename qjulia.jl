@@ -100,28 +100,35 @@ const qjulia_kernel = cl.Kernel(qjulia_program, "QJuliaKernel")
 const buffer = cl.Buffer(Float32, ctx, :w, sizeof(Float32) * cl.nchannels(cl.RGBA) * width * height)
 
 function compute()
-
+	# Blocking call to compute the context
     cl.call(queue, qjulia_kernel, (width, height), nothing, buffer, μC..., colorC..., ε)
-    glFinish()
-    err = cl.api.clEnqueueAcquireGLObjects(queue.id, 1, [image], 0, 0, C_NULL)
+
+    ret_event = Array(cl.CL_event, 1)
+
+    err = cl.api.clEnqueueAcquireGLObjects(queue.id, cl.cl_uint(1), [image], cl.cl_uint(0), cl.C_NULL, ret_event)
     if (err != cl.CL_SUCCESS)
         error("Failed to acquire GL object! ", err)
     end
+    evt_1 = Event(ret_event[1], retain=false)
+
     origin = Csize_t[ 0, 0, 0 ]
     region = Csize_t[width, height, 1 ]
+
     err = cl.api.clEnqueueCopyBufferToImage(queue.id, buffer.id, image, 
-                                     0, origin, region, 0, C_NULL, 0)
+                                     0, origin, region, cl.cl_uint(1), [evt_1.id], ret_event)
     
     if err != cl.CL_SUCCESS
         println("Failed to copy buffer to image! ", err)
     end
-    
-    err = cl.api.clEnqueueReleaseGLObjects(queue.id, 1, [image], 0, 0, 0)
+    evt_2 = Event(ret_event[1], retain=false)
+
+    err = cl.api.clEnqueueReleaseGLObjects(queue.id, 1, [image], 1, [evt_2.id], ret_event)
     if err != cl.CL_SUCCESS
         println("Failed to release GL object! ", err)
     end
 
-
+    evt_3 = Event(ret_event[1], retain=false)
+    cl.wait(evt_3)
 end
 
 # TODO workgroup size
