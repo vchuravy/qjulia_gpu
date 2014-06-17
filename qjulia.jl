@@ -110,7 +110,7 @@ function compute()
     if (err != cl.CL_SUCCESS)
         error("Failed to acquire GL object! ", err)
     end
-    evt_1 = Event(ret_event[1], retain=false)
+    evt_1 = cl.Event(ret_event[1], retain=false)
 
     origin = Csize_t[ 0, 0, 0 ]
     region = Csize_t[width, height, 1 ]
@@ -121,14 +121,14 @@ function compute()
     if err != cl.CL_SUCCESS
         println("Failed to copy buffer to image! ", err)
     end
-    evt_2 = Event(ret_event[1], retain=false)
+    evt_2 = cl.Event(ret_event[1], retain=false)
 
     err = cl.api.clEnqueueReleaseGLObjects(queue.id, 1, [image], 1, [evt_2.id], ret_event)
     if err != cl.CL_SUCCESS
         println("Failed to release GL object! ", err)
     end
 
-    evt_3 = Event(ret_event[1], retain=false)
+    evt_3 = cl.Event(ret_event[1], retain=false)
     cl.wait(evt_3)
 end
 
