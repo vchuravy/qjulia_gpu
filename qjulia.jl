@@ -23,6 +23,9 @@ const window = initGLWindow()
 const devices = isempty(cl.devices(:gpu)) ? cl.devices() : cl.devices(:gpu)
 const device = !isempty(devices) ? first(devices) : error("Could not find a OpenCL device")
 const platform = cl.info(device, :platform)
+const clVersion = cl.opencl_version(platform)
+
+println("Using OpenCL $version on $(cl.info(device, :name)) driven by platform $(cl.info(platform, :name))")
 
 if !("cl_khr_gl_sharing" in cl.info(device, :extensions)) 
     error("Need extensions cl_khr_gl_sharing")
