@@ -13,17 +13,6 @@ const glRenderer = bytestring(glGetString(GL_RENDERER))
 
 println("Using OpenGL $glVersion on $glRenderer provided by $glVendor")
 
-const devices = isempty(cl.devices(:gpu)) ? cl.devices() : cl.devices(:gpu)
-const device = !isempty(devices) ? first(devices) : error("Could not find a OpenCL device")
-const platform = cl.info(device, :platform)
-const clVersion = cl.opencl_version(platform)
-
-println("Using OpenCL $clVersion on $(cl.info(device, :name)) driven by platform $(cl.info(platform, :name))")
-
-if !("cl_khr_gl_sharing" in cl.info(device, :extensions)) 
-    error("Need extensions cl_khr_gl_sharing")
-end
-
 const glLib = @windows? "opengl32" : @linux? "libGL" : ""
 
 @windows? begin
@@ -46,16 +35,56 @@ end : @linux? begin
 
 end : error("Can't handle this")
 
-const props = [getProperties(), (cl.CL_CONTEXT_PLATFORM, platform)]
+function getDevices(platform)
+    props = [getProperties(), (cl.CL_CONTEXT_PLATFORM, platform)]
+    parsed_props = cl._parse_properties(props)
 
+    nbytes = cl.Csize_t[0]
+    err = cl.api.clGetGLContextInfoKHR(parsed_props, cl.CL_DEVICES_FOR_GL_CONTEXT_KHR, cl.C_NULL, cl.C_NULL, nbytes)
+    if (err != cl.CL_SUCCESS)
+        error("Failed to query devices! ", err)
+    end
+
+    ndevices = div(nbytes[1], sizeof(cl.CL_device_id))
+    devices = Array(cl.CL_device_id, ndevices)
+
+    err = cl.api.clGetGLContextInfoKHR(parsed_props, cl.CL_DEVICES_FOR_GL_CONTEXT_KHR, nbytes[1], devices, cl.C_NULL)
+    if (err != cl.CL_SUCCESS)
+        error("Failed to obtain devices! ", err)
+    end
+
+    return [cl.Device(id) for id in devices]
+end
+
+# Given a filter function
+function getDevice(f :: Function)
+    devices = cl.Device[]
+    for platform in cl.platforms()
+        append!(devices, getDevices(platform))
+    end
+
+    devices = filter(f, devices)
+
+    isempty(devices) && error("Could not get any devices")
+
+    gpu_devices = filter(devices) do dev
+        dev[:device_type] == :gpu
+    end
+
+    isempty(gpu_devices) ? first(devices) : first(gpu_devices)
+end
+
+const device = getDevice(dev -> "cl_khr_gl_sharing" in dev[:extensions] && dev[:has_image_support])
+const platform = device[:platform]
+const clVersion = cl.opencl_version(platform)
+
+println("Using OpenCL $clVersion on $(cl.info(device, :name)) driven by platform $(cl.info(platform, :name))")
+
+const props = [getProperties(), (cl.CL_CONTEXT_PLATFORM, platform)]
 
 # Setup OpenCL
 const ctx = cl.Context(device, properties = props)
 const queue = cl.CmdQueue(ctx)
-
-if !device[:has_image_support]
-	error("Device $device has no image support. Aborting.")
-end
 
 # Setup program parameter
 
