@@ -74,12 +74,28 @@ int main(void)
 		printf("Texture creation =>  OpenCL error: %d\n", ret); 
 
 	// Create Buffer RGB * width * height
-    cl_mem buffer = clCreateBuffer(ctx, CL_MEM_WRITE_ONLY, 3 * width * height, NULL, &ret);
+    cl_mem buffer = clCreateBuffer(ctx, CL_MEM_WRITE_ONLY, 4 * width * height, NULL, &ret);
 	if(ret != 0)
 		printf("Buffer creation =>  OpenCL error: %d\n", ret); 
 
 	while (!glfwWindowShouldClose(window))
 	{
+		cl_mem glObjects[] = {image};
+		ret = clEnqueueAcquireGLObjects(queue, 1, glObjects, 0, NULL, NULL);
+	    if(ret != 0)
+			printf("Acquire GL Objects =>  OpenCL error: %d\n", ret); 
+
+		size_t origin[] = { 0, 0, 0 };
+		size_t region[] = { width, height, 1 };
+
+	    ret = clEnqueueCopyBufferToImage(queue, buffer, image, 0, origin, region, 0, NULL, NULL);
+	    if(ret != 0)
+			printf("Copy Buffer to Image =>  OpenCL error: %d\n", ret); 
+
+	    ret = clEnqueueReleaseGLObjects(queue, 1, glObjects, 0, NULL, NULL);
+	    if(ret != 0)
+			printf("Copy Buffer to Image =>  OpenCL error: %d\n", ret); 
+
 		float ratio;
 		ratio = width / (float) height;
 		glViewport(0, 0, width, height);
