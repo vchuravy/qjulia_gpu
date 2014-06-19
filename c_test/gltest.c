@@ -73,8 +73,8 @@ int main(void)
 	if(ret != 0)
 		printf("Texture creation =>  OpenCL error: %d\n", ret); 
 
-	// Create Buffer RGB * width * height
-    cl_mem buffer = clCreateBuffer(ctx, CL_MEM_WRITE_ONLY, 4 * width * height, NULL, &ret);
+	// Create Buffer RGBA * * width * height
+    cl_mem buffer = clCreateBuffer(ctx, CL_MEM_WRITE_ONLY, 4 * width * height * sizeof(GL_UNSIGNED_BYTE), NULL, &ret);
 	if(ret != 0)
 		printf("Buffer creation =>  OpenCL error: %d\n", ret); 
 
