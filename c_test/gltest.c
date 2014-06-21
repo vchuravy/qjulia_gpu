@@ -62,39 +62,51 @@ int main(void)
 	};
 
     cl_context ctx = clCreateContext(properties, 1, &device_id, NULL, NULL, &ret);
-    if(ret != 0)
+    if(ret != 0) {
 		printf("Context creation => OpenCL error: %d\n", ret); 
+    	exit(ret);
+    }
  
     // Create a command queue
     cl_command_queue queue = clCreateCommandQueue(ctx, device_id, 0, &ret);
 
     //Create Image
 	cl_mem image = clCreateFromGLTexture2D(ctx, CL_MEM_READ_WRITE, GL_TEXTURE_2D, 0, texture[0], &ret);
-	if(ret != 0)
+	if(ret != 0) {
 		printf("Texture creation =>  OpenCL error: %d\n", ret); 
+		exit(ret);
+	}
 
 	// Create Buffer RGBA * * width * height
     cl_mem buffer = clCreateBuffer(ctx, CL_MEM_WRITE_ONLY, 4 * width * height * sizeof(GL_UNSIGNED_BYTE), NULL, &ret);
-	if(ret != 0)
+	if(ret != 0) {
 		printf("Buffer creation =>  OpenCL error: %d\n", ret); 
+		exit(ret);
+	}
 
 	while (!glfwWindowShouldClose(window))
 	{
 		cl_mem glObjects[] = {image};
 		ret = clEnqueueAcquireGLObjects(queue, 1, glObjects, 0, NULL, NULL);
-	    if(ret != 0)
+	    if(ret != 0) {
 			printf("Acquire GL Objects =>  OpenCL error: %d\n", ret); 
+	    	exit(ret);
+	    }
 
 		size_t origin[] = { 0, 0, 0 };
 		size_t region[] = { width, height, 1 };
 
 	    ret = clEnqueueCopyBufferToImage(queue, buffer, image, 0, origin, region, 0, NULL, NULL);
-	    if(ret != 0)
+	    if(ret != 0) {
 			printf("Copy Buffer to Image =>  OpenCL error: %d\n", ret); 
+	    	exit(ret);
+	    }
 
 	    ret = clEnqueueReleaseGLObjects(queue, 1, glObjects, 0, NULL, NULL);
-	    if(ret != 0)
+	    if(ret != 0) {
 			printf("Copy Buffer to Image =>  OpenCL error: %d\n", ret); 
+	    	exit(ret);
+	    }
 
 		float ratio;
 		ratio = width / (float) height;
