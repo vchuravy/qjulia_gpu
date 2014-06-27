@@ -4,6 +4,7 @@
 
 #include <CL/cl.h>
 #include <CL/cl_gl.h>
+#include <CL/cl_gl_ext.h>
 
 static void error_callback(int error, const char* description)
 {
@@ -61,6 +62,23 @@ int main(void)
 	0
 	};
 
+	size_t nbytes = NULL;
+    ret = clGetGLContextInfoKHR(properties, CL_DEVICES_FOR_GL_CONTEXT_KHR, 0, NULL, &nbytes);
+    if(ret != 0) {
+		printf("Get Context info => OpenCL error: %d\n", ret); 
+    	exit(ret);
+    }
+
+    int ndevices = nbytes / sizeof(cl_device_id);
+    cl_device_id devices[ndevices];
+
+    ret = clGetGLContextInfoKHR(properties, CL_DEVICES_FOR_GL_CONTEXT_KHR, nbytes, &devices, NULL);
+    if(ret != 0) {
+		printf("Get Context devices => OpenCL error: %d\n", ret); 
+    	exit(ret);
+    }
+
+
     cl_context ctx = clCreateContext(properties, 1, &device_id, NULL, NULL, &ret);
     if(ret != 0) {
 		printf("Context creation => OpenCL error: %d\n", ret); 
@@ -86,6 +104,9 @@ int main(void)
 
 	while (!glfwWindowShouldClose(window))
 	{
+		glFinish();
+		clFinish(queue);
+
 		cl_mem glObjects[] = {image};
 		ret = clEnqueueAcquireGLObjects(queue, 1, glObjects, 0, NULL, NULL);
 	    if(ret != 0) {
@@ -107,6 +128,7 @@ int main(void)
 			printf("Copy Buffer to Image =>  OpenCL error: %d\n", ret); 
 	    	exit(ret);
 	    }
+	    clFinish(queue);
 
 		float ratio;
 		ratio = width / (float) height;
@@ -133,7 +155,6 @@ int main(void)
 		glfwPollEvents();
 	}
 
-	ret = clFlush(queue);
     ret = clFinish(queue);
     ret = clReleaseMemObject(image);
     ret = clReleaseMemObject(buffer);
