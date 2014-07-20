@@ -22,3 +22,6 @@ add_executable(gltest gltest.c)
 include_directories(${GLFW_INCLUDE_DIRS} ${OPENCL_INCLUDE_DIRS})
  
 target_link_libraries(gltest ${GLFW_LIBRARIES} ${GL_LIBRARY} ${OPENCL_LIBRARIES})
+
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+SET(CMAKE_BUILD_TYPE Debug) 
