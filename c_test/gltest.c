@@ -1,6 +1,7 @@
 #include <GLFW/glfw3.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <CL/cl.h>
 #include <CL/cl_gl.h>
@@ -15,6 +16,55 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
 }
+
+int check_device(cl_device_id device) {
+	size_t nbytes;
+	clGetDeviceInfo(device, CL_DEVICE_EXTENSIONS, 0, NULL, &nbytes);
+
+	int n_extensions = nbytes / sizeof(char);
+	char extensions[n_extensions];
+
+	clGetDeviceInfo(device, CL_DEVICE_EXTENSIONS, nbytes, &extensions, NULL);
+
+	if (strstr(extensions, "cl_khr_gl_sharing") != NULL) {
+		return 0;
+	} else {
+		return -1;
+	}
+}
+
+// Checks if platform supports the necessary extension.
+int check_platform(cl_platform_id platform_id) {
+	cl_int ret;  
+    cl_uint ndevices;
+
+	ret = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_DEFAULT, 0, 
+            NULL, &ndevices);
+
+	if(ret != 0) {
+		printf("Error in check_platform: %d\n", ret); 
+    	return(ret);
+    }
+
+	cl_device_id devices[ndevices]; 
+
+	ret = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_ALL, ndevices, 
+            devices, 0);
+
+	if(ret != 0) {
+		printf("Error in check_platform: %d\n", ret); 
+    	return(ret);
+    }
+
+    for (int i = 0; i < ndevices; ++i)
+    {
+    	if(check_device(devices[i]) == 0){
+    		return(0);
+    	}
+    }
+    return(-1);	
+}
+
 int main(void)
 {
 	GLFWwindow* window;
@@ -47,13 +97,40 @@ int main(void)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
     // Init OpenCL
-    cl_platform_id platform_id = NULL;
-    cl_device_id device_id = NULL;   
-    cl_uint ret_num_devices;
-    cl_uint ret_num_platforms;
-    cl_int ret = clGetPlatformIDs(1, &platform_id, &ret_num_platforms);
-    ret = clGetDeviceIDs( platform_id, CL_DEVICE_TYPE_DEFAULT, 1, 
-            &device_id, &ret_num_devices);
+    cl_uint nplatforms;
+
+    cl_int ret = clGetPlatformIDs(0, NULL, &nplatforms);
+    if(ret != 0) {
+		printf("Could not find OpenCL platforms: %d\n", ret); 
+    	exit(ret);
+    } else {
+    	printf("Found %d platforms \n", nplatforms);
+    }
+
+	cl_platform_id platform_ids[nplatforms];
+    ret = clGetPlatformIDs(nplatforms, platform_ids, NULL);
+
+    cl_platform_id platform_id;
+    for (int i = 0; i < nplatforms; ++i){
+    	if(check_platform(platform_ids[i]) == 0) {
+    		platform_id = platform_ids[i];
+    		break;
+    	}
+    }	
+
+    // check for extension support
+    if(platform_id == NULL) {
+    	printf("Did not find any platform that supports the necessary extensions");
+    	exit(-1);
+    }
+
+    // get pointer to clGetGLContextInfoKHR
+	cl_int (*clGetGLContextInfoKHR)(cl_context_properties*, cl_gl_context_info, size_t, void*, size_t*);
+	clGetGLContextInfoKHR = clGetExtensionFunctionAddress("clGetGLContextInfoKHR");
+	if(clGetGLContextInfoKHR == 0) {
+		printf("Could not obtain a function pointer to clGetGLContextInfoKHR"); 
+    	exit(-1);
+    }
 
     cl_context_properties properties[] = {
 		CL_CONTEXT_PLATFORM, (cl_context_properties)platform_id,
@@ -78,29 +155,49 @@ int main(void)
     	exit(ret);
     }
 
+   	cl_device_id device = devices[0];
 
-    cl_context ctx = clCreateContext(properties, 1, &device_id, NULL, NULL, &ret);
+   	if(check_device(device) == 0){
+   		printf("Found device that supports the extensions necessary\n");
+   	} else {
+   		exit(-1);
+   	}
+
+    cl_context ctx = clCreateContext(properties, 1, &device, NULL, NULL, &ret);
     if(ret != 0) {
 		printf("Context creation => OpenCL error: %d\n", ret); 
     	exit(ret);
+    } else {
+    	printf("Context creation successful\n");
     }
  
     // Create a command queue
-    cl_command_queue queue = clCreateCommandQueue(ctx, device_id, 0, &ret);
+    cl_command_queue queue = clCreateCommandQueue(ctx, device, 0, &ret);
+
+	if(ret != 0) {
+		printf("Queue creation =>  OpenCL error: %d\n", ret); 
+		exit(ret);
+	} else {
+    	printf("Queue creation successful\n");
+    }
 
     //Create Image
 	cl_mem image = clCreateFromGLTexture2D(ctx, CL_MEM_READ_WRITE, GL_TEXTURE_2D, 0, texture[0], &ret);
 	if(ret != 0) {
 		printf("Texture creation =>  OpenCL error: %d\n", ret); 
 		exit(ret);
-	}
+	} else {
+    	printf("Texture creation successful\n");
+    }
 
 	// Create Buffer RGBA * * width * height
     cl_mem buffer = clCreateBuffer(ctx, CL_MEM_WRITE_ONLY, 4 * width * height * sizeof(GL_UNSIGNED_BYTE), NULL, &ret);
 	if(ret != 0) {
 		printf("Buffer creation =>  OpenCL error: %d\n", ret); 
 		exit(ret);
-	}
+	} else {
+    	printf("Buffer creation successful");
+    }
 
 	while (!glfwWindowShouldClose(window))
 	{
