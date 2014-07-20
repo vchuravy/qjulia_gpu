@@ -139,23 +139,13 @@ int main(void)
 	0
 	};
 
-	size_t nbytes = NULL;
-    ret = clGetGLContextInfoKHR(properties, CL_DEVICES_FOR_GL_CONTEXT_KHR, 0, NULL, &nbytes);
-    if(ret != 0) {
-		printf("Get Context info => OpenCL error: %d\n", ret); 
-    	exit(ret);
-    }
+    cl_device_id device;
 
-    int ndevices = nbytes / sizeof(cl_device_id);
-    cl_device_id devices[ndevices];
-
-    ret = clGetGLContextInfoKHR(properties, CL_DEVICES_FOR_GL_CONTEXT_KHR, nbytes, &devices, NULL);
+    ret = clGetGLContextInfoKHR(properties, CL_CURRENT_DEVICE_FOR_GL_CONTEXT_KHR, sizeof(cl_device_id), &device, NULL);
     if(ret != 0) {
 		printf("Get Context devices => OpenCL error: %d\n", ret); 
     	exit(ret);
     }
-
-   	cl_device_id device = devices[0];
 
    	if(check_device(device) == 0){
    		printf("Found device that supports the extensions necessary\n");
@@ -196,7 +186,7 @@ int main(void)
 		printf("Buffer creation =>  OpenCL error: %d\n", ret); 
 		exit(ret);
 	} else {
-    	printf("Buffer creation successful");
+    	printf("Buffer creation successful\n");
     }
 
 	while (!glfwWindowShouldClose(window))
