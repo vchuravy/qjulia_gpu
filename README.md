@@ -26,7 +26,7 @@ other requirements are:
 ```
 - Images
 - GLFW 
-- ModernGL https://github.com/SimonDanisch/ModernGL.jl.git
+- ModernGL https://github.com/JuliaGL/ModernGL.jl.git
 - GLAbstraction https://github.com/SimonDanisch/GLAbstraction.jl.git
 - GLWindow https://github.com/SimonDanisch/GLWindow.jl.git
 ```
