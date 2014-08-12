@@ -133,6 +133,7 @@ function compute()
 	# Blocking call to compute the context
     cl.call(queue, qjulia_kernel, (width, height), nothing, buffer, μC..., colorC..., ε)
 
+    glFinish()
     ret_event = Array(cl.CL_event, 1)
 
     err = cl.api.clEnqueueAcquireGLObjects(queue.id, cl.cl_uint(1), [image], cl.cl_uint(0), cl.C_NULL, ret_event)
@@ -159,6 +160,7 @@ function compute()
 
     evt_3 = cl.Event(ret_event[1], retain=false)
     cl.wait(evt_3)
+    cl.finish(queue)
 end
 
 # TODO workgroup size
