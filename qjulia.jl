@@ -5,7 +5,7 @@ const cl = OpenCL
 const width = 1024 # Also needs changing in qjulia_kernel.cl
 const height = 1024 # Also needs changing in qjulia_kernel.cl
 
-const window = createWindow("QJulia", width, height)
+const window = createwindow("QJulia", width, height)
 
 const glVersion = bytestring(glGetString(GL_VERSION))
 const glVendor = bytestring(glGetString(GL_VENDOR))
