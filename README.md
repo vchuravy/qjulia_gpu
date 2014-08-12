@@ -27,7 +27,7 @@ other requirements are:
 - Images
 - GLFW 
 - ModernGL https://github.com/SimonDanisch/ModernGL.jl.git
-- GLUtil https://github.com/SimonDanisch/GLUtil.jl.git
+- GLAbstraction https://github.com/SimonDanisch/GLAbstraction.jl.git
 - GLWindow https://github.com/SimonDanisch/GLWindow.jl.git
 ```
 They can be installed by executing packages.jl

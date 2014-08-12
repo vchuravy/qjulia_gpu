@@ -1,8 +1,19 @@
 Pkg.update()
-Pkg.add("Images")
-Pkg.clone("https://github.com/jayschwa/GLFW.jl.git")
-Pkg.clone("https://github.com/SimonDanisch/GLUtil.jl.git")
-Pkg.clone("https://github.com/SimonDanisch/ModernGL.jl.git")
-Pkg.clone("https://github.com/SimonDanisch/GLWindow.jl.git")
-Pkg.update()
+
+pkgs = ["Images", "GLFW"]
+for pkg in pkgs
+	Pkg.add(pkg)
+end
+
+dev_pkgs = [
+	"https://github.com/SimonDanisch/GLAbstraction.jl.git"
+	"https://github.com/SimonDanisch/ModernGL.jl.git"
+	"https://github.com/SimonDanisch/GLWindow.jl.git"
+	]
+
+for pkg in dev_pkgs
+	Pkg.clone(pkg)
+end
+
 Pkg.build()
+Pkg.update()

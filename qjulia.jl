@@ -1,5 +1,5 @@
 import OpenCL
-using ModernGL, GLWindow, GLFW, GLUtil, Images
+using ModernGL, GLWindow, GLFW, GLAbstraction, Images
 const cl = OpenCL
 
 const width = 1024 # Also needs changing in qjulia_kernel.cl
