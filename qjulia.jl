@@ -59,7 +59,11 @@ end
 # Given a filter function
 function getDevice(f :: Function)
     devices = cl.Device[]
-    for platform in cl.platforms()
+    platforms = cl.platforms()
+
+    isempty(platforms) && error("Could not find any OpenCL platforms.")
+
+    for platform in platfroms
         append!(devices, getDevices(platform))
     end
 
